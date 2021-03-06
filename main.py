@@ -65,9 +65,9 @@ def write_excel(responce_data: response_api_data, call_from: str) -> None:
         print(e)
 
 
-def capture_remote_ip() -> str:
+def capture_remote_ip(remote_url: str) -> str:
     """capture remote IP address"""
-    return socket.gethostbyname(socket.gethostname())
+    return socket.gethostbyname(remote_url.split('/')[2])
 
 
 def date_validation(date: str) -> datetime:
@@ -78,13 +78,13 @@ def date_validation(date: str) -> datetime:
         print(f"Exception occurred in date validation {e}")
 
 
-def api_responce_validation(api_response: response_api_data, call_from: str) -> None:
+def api_responce_validation(api_response: response_api_data, call_from: str, remote_url: str) -> None:
     """validating and response data formation"""
     print("Validating response")
     if api_response.status_code == 200:
         api_response_data: response_api_data = api_response.json()
         api_response_data["X-RateLimit-Remaining"] = api_response.headers['X-RateLimit-Remaining']
-        api_response_data["remote_ip"] = capture_remote_ip()
+        api_response_data["remote_ip"] = capture_remote_ip(remote_url=remote_url)
         write_excel(responce_data=api_response_data, call_from=call_from)
     else:
         print(f"Bad response code{api_response.status_code}")
@@ -99,7 +99,7 @@ def apod_api_call(api_token: str, call_from: str, apod_endpoint: str) -> None:
         # resp: response_api_data = requests.get(f'https://api.nasa.gov/planetary/apod?api_key={api_token}')
         apod_endpoint = apod_endpoint.format(api_token=api_token)
         resp: response_api_data = requests.get(apod_endpoint)
-        api_responce_validation(api_response=resp, call_from=call_from)
+        api_responce_validation(api_response=resp, call_from=call_from, remote_url=apod_endpoint)
         print("-" * 50)
     except Exception as e:
         print(f"Exception occurred {e}")
@@ -125,7 +125,7 @@ def asteroids_api_call(api_token: str, call_from: str,asteroid_neo_lookup: str, 
         api_link: str = asteroid_neo_feed.format(start_date=start_date, end_date=end_date, api_token=api_token)#f"https://api.nasa.gov/neo/rest/v1/feed?start_date={start_date}&end_date={end_date}&api_key={api_token}"
     try:
         resp = requests.get(api_link)
-        api_responce_validation(api_response=resp, call_from=call_from)
+        api_responce_validation(api_response=resp, call_from=call_from, remote_url=api_link)
     except Exception as e:
         print(f"Exception occurred in asteroid api call and exception is {e}")
 
